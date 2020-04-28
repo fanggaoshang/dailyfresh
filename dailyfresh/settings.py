@@ -40,10 +40,10 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tinymce',  # 富文本编辑器
-    'user',  # 用户模块
-    'goods',  # 商品模块
-    'order',  # 订单模块
-    'cart',  # 购物车模块
+    'apps.user',  # 用户模块
+    'apps.goods',  # 商品模块
+    'apps.order',  # 订单模块
+    'apps.cart',  # 购物车模块
 )
 
 MIDDLEWARE_CLASSES = (
@@ -87,7 +87,7 @@ DATABASES = {
         'NAME': 'dailyfresh',
         'USER': 'root',
         'PASSWORD': 'mysql',
-        'HOST': '192.168.31.128',
+        'HOST': 'localhost',
         'PORT': 3306,
     }
 }
@@ -120,3 +120,13 @@ TINYMCE_DEFAULT_CONFIG = {
     'width': 600,
     'height': 400,
 }
+# 邮箱发送短信
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.163.com'
+EMAIL_PORT = 25
+# 发送邮件的邮箱
+EMAIL_HOST_USER = 'fangyingdon@163.com'
+# 在邮箱中设置的客户端授权密码
+EMAIL_HOST_PASSWORD = '786914141fang'
+# 收件人看到的发件人
+EMAIL_FROM = '天天生鲜<fangyingdon@163.com>'
