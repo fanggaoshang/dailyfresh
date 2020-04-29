@@ -10,7 +10,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dailyfresh.settings")
 django.setup()
 
 # 创建一个Celery类的实例对象
-app = Celery('celery_tasks.tasks', broker='redis://192.168.31.128:6379/8')
+app = Celery('celery_tasks.tasks', broker='redis://localhost:6379/8')
 
 
 # 定义任务函数
@@ -23,7 +23,7 @@ def send_register_active_email(to_email, username, token):
     sender = settings.EMAIL_FROM
     receiver = [to_email]
     html_message = '<h1>%s,欢迎您成为天天生鲜会员</h1>请点击下面链接激活您的账户<br/><a ' \
-                   'href="http://192.168.31.128:8000/user/active/%s">http://192.168.31.128:8000/user/active/%s</a>' % (
+                   'href="http://39.99.241.190:8000/user/active/%s">http://39.99.241.190:8000/user/active/%s</a>' % (
                        username, token, token)
     send_mail(subject, message, sender, receiver, html_message=html_message)
     time.sleep(5)
