@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from celery_tasks.tasks import send_register_active_email
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import SignatureExpired
 import re
@@ -116,15 +117,6 @@ class RegisterView(View):
         if user:
             # 用户已存在
             return render(request, 'register.html', {'errmsg': '用户已存在'})
-        try:
-            # 检验用户名是否重复
-            email = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # 邮箱不存在
-            email = None
-        if email:
-            # 邮箱已存在
-            return render(request, 'register.html', {'errmsg': '邮箱已存在'})
         # 进行业务处理:创建用户
         user = User.objects.create_user(username, email, password)
         user.is_active = 0
@@ -133,14 +125,10 @@ class RegisterView(View):
         serializer = Serializer(settings.SECRET_KEY, 1800)
         info = {'confirm': user.id}
         token = serializer.dumps(info)
+        token = token.decode()
 
         # 发邮件
-        subject = '天天生鲜激活信息'
-        message = 'tikkljdsflj'
-        sender = settings.EMAIL_FROM
-        receiver = [email]
-        send_mail(subject, message, sender, receiver)
-
+        send_register_active_email.delay(email, username, token)
         return redirect(reverse('goods:index'))
 
 
@@ -151,6 +139,7 @@ class ActiveView(View):
         serializer = Serializer(settings.SECRET_KEY, 1800)
         try:
             info = serializer.loads(token)
+            print(info)
             # 获取激活用户的id
             user_id = info['confirm']
             user = User.objects.get(id=user_id)
@@ -163,6 +152,6 @@ class ActiveView(View):
 
 class LoginView(View):
     ''' 显示登录页面 '''
-    def login(self, request):
+    def get(self, request):
         return render(request, 'login.html')
 

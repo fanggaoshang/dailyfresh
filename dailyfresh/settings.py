@@ -127,6 +127,6 @@ EMAIL_PORT = 25
 # 发送邮件的邮箱
 EMAIL_HOST_USER = 'fangyingdon@163.com'
 # 在邮箱中设置的客户端授权密码
-EMAIL_HOST_PASSWORD = '786914141fang'
+EMAIL_HOST_PASSWORD = 'NVAWJVGUEAPPNYBW'
 # 收件人看到的发件人
 EMAIL_FROM = '天天生鲜<fangyingdon@163.com>'
