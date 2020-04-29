@@ -130,3 +130,17 @@ EMAIL_HOST_USER = 'fangyingdon@163.com'
 EMAIL_HOST_PASSWORD = 'NVAWJVGUEAPPNYBW'
 # 收件人看到的发件人
 EMAIL_FROM = '天天生鲜<fangyingdon@163.com>'
+
+# django-redis配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://192.168.31.128:6379/9",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+# session配置
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
