@@ -4,10 +4,11 @@ from django.views.generic import View
 from django.http import HttpResponse
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.conf import settings
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import SignatureExpired
+from utils.mixin import LoginRequiresMixin
 import re
 
 
@@ -143,8 +144,10 @@ class RegisterView(View):
         send_mail(subject, message, sender, receiver)
         return redirect(reverse('goods:index'))
 
+
 class ActiveView(View):
     ''' 用户激活 '''
+
     def get(self, request, token):
         print(token)
         serializer = Serializer(settings.SECRET_KEY, 1800)
@@ -162,6 +165,7 @@ class ActiveView(View):
 
 class LoginView(View):
     ''' 显示登录页面 '''
+
     def get(self, request):
         return render(request, 'login.html')
 
@@ -179,10 +183,48 @@ class LoginView(View):
             if user.is_active:
                 # 记录用户状态
                 login(request, user)
-                return redirect(reverse("goods:index"))
+                # 获取登录后要跳转的地址
+                # 默认跳转到首页
+                next_url = request.GET.get('next', reverse('goods:index'))
+                response = redirect(next_url)  # HttpResponseRedirect
+
+                # 判断是否需要记住用户名
+                remember = request.POST.get('remember')
+                print(remember)
+
+                if remember == 'on':
+                    # 记住用户名
+                    response.set_cookie('username', username, max_age=7 * 24 * 3600)
+                else:
+                    response.delete_cookie('username')
+
+                # 返回response
+                return response
             else:
-                return render(request, 'login.html', {'errmsg': '情急或你的账户'})
+                # 用户未激活
+                return render(request, 'login.html', {'errmsg': '账户未激活'})
         else:
-            # 用户名密码错误
+            # 用户名或密码错误
             return render(request, 'login.html', {'errmsg': '用户名或密码错误'})
 
+
+class LogoutView(View):
+    def get(self, request):
+        # 退出登录,清除用户的session信息
+        logout(request)
+        return redirect(reverse('goods:index'))
+
+
+class UserInfoView(LoginRequiresMixin, View):
+    def get(self, request):
+        return render(request, 'user_center_info.html', {'page': 'user'})
+
+
+class UserOrderView(LoginRequiresMixin, View):
+    def get(self, request):
+        return render(request, 'user_center_order.html', {'page': 'order'})
+
+
+class AddressView(LoginRequiresMixin, View):
+    def get(self, request):
+        return render(request, 'user_center_site.html', {'page': 'address'})
