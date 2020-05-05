@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from apps.user.models import User
+from apps.user.models import User, Address
 from django.views.generic import View
 from django.http import HttpResponse
 from django.core.mail import send_mail
@@ -9,6 +9,8 @@ from django.conf import settings
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import SignatureExpired
 from utils.mixin import LoginRequiresMixin
+from django_redis import get_redis_connection
+from apps.goods.models import GoodsSKU
 import re
 
 
@@ -217,7 +219,21 @@ class LogoutView(View):
 
 class UserInfoView(LoginRequiresMixin, View):
     def get(self, request):
-        return render(request, 'user_center_info.html', {'page': 'user'})
+        user = request.user
+        address = Address.objects.get_default_address(user)
+        con = get_redis_connection('default')
+        history_key = 'history_%s' % user.id
+        sku_ids = con.lrange(history_key, 0, 4)
+        goods_li = list()
+        for id in sku_ids:
+            goods = GoodsSKU.objects.get(id=id)
+            goods_li.append(goods)
+        context = {
+            'page': 'user',
+            'address': address,
+            'goods_li': goods_li
+        }
+        return render(request, 'user_center_info.html', context)
 
 
 class UserOrderView(LoginRequiresMixin, View):
@@ -227,4 +243,37 @@ class UserOrderView(LoginRequiresMixin, View):
 
 class AddressView(LoginRequiresMixin, View):
     def get(self, request):
-        return render(request, 'user_center_site.html', {'page': 'address'})
+        user = request.user
+        # try:
+        #     address = Address.objects.get(user=user, is_default=True)
+        # except Address.DoesNotExist:
+        #     address = None
+        address = Address.objects.get_default_address(user)
+        return render(request, 'user_center_site.html', {'page': 'address', 'address': address})
+
+    def post(self, request):
+        receiver = request.POST.get('receiver')
+        addr = request.POST.get('addr')
+        zip_code = request.POST.get('zip_code')
+        phone = request.POST.get('phone')
+        if not all([receiver, addr, phone]):
+            return render(request, 'user_center_site.html', {'errmsg': '数据不完整'})
+        if not re.match('^1[3|4|5|7|8|9][0-9]{9}$', phone):
+            return render(request, 'user_center_site.html', {'errmsg': '手机号不正确'})
+        user = request.user
+        # try:
+        #     address = Address.objects.get(user=user, is_default=True)
+        # except Address.DoesNotExist:
+        #     address = None
+        address = Address.objects.get_default_address(user)
+        if address:
+            is_default = False
+        else:
+            is_default = True
+        Address.objects.create(user=user,
+                               receiver=receiver,
+                               addr=addr,
+                               zip_code=zip_code,
+                               phone=phone,
+                               is_default=is_default)
+        return redirect(reverse('user:address'))
